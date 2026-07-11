@@ -2,18 +2,50 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, Mail, UserSquare2, ArrowRight, ArrowLeft, GraduationCap } from 'lucide-react';
+import { Lock, Mail, UserSquare2, ArrowRight, ArrowLeft, GraduationCap, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function TeacherLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Plus tard : Validation réelle avec la DB
-    router.push('/teacher-dashboard');
+    setError('');
+    setSuccess(false);
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, role: 'teacher' }), // Rôle enseignant configuré pour le modèle Teacher
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Une erreur est survenue.');
+      }
+
+      // 🟢 Succès : On active l'état vert
+      setSuccess(true);
+
+      // Petite pause pour laisser l'animation de validation s'afficher à l'écran
+      setTimeout(() => {
+        router.push('/teacher-dashboard');
+        router.refresh();
+      }, 800);
+
+    } catch (err: any) {
+      // 🔴 Erreur : Identifiants invalides ou problème serveur
+      setError(err.message);
+      setLoading(false);
+    }
   };
 
   return (
@@ -43,7 +75,7 @@ export default function TeacherLoginPage() {
             <span className="text-indigo-300">Enseignements.</span>
           </h2>
           <p className="text-indigo-100/80 font-bold text-lg max-w-md leading-relaxed">
-            Gérez vos ressources, évaluez vos étudiants et suivez l'évolution de vos modules en un seul endroit.
+            Gerez vos ressources, évaluez vos étudiants et suivez l'évolution de vos modules en un seul endroit.
           </p>
         </div>
 
@@ -65,8 +97,10 @@ export default function TeacherLoginPage() {
               <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Retour à l'accueil
             </Link>
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shadow-sm">
-                <UserSquare2 size={28} />
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-colors duration-300 ${
+                success ? 'bg-green-100 text-green-600' : error ? 'bg-red-100 text-red-600' : 'bg-indigo-50 text-indigo-600'
+              }`}>
+                {success ? <CheckCircle2 size={28} /> : error ? <AlertCircle size={28} /> : <UserSquare2 size={28} />}
               </div>
               <div>
                 <h3 className="text-3xl font-black text-slate-900 tracking-tight">Enseignant</h3>
@@ -75,45 +109,100 @@ export default function TeacherLoginPage() {
             </div>
           </div>
 
+          {/* Messages de retour d'état (Animations fluides) */}
+          {error && (
+            <div className="p-5 text-xs text-red-700 bg-red-50 rounded-3xl font-black uppercase tracking-wider border border-red-100 flex items-center gap-3 animate-bounce-short">
+              <AlertCircle className="w-5 h-5 shrink-0 text-red-500" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {success && (
+            <div className="p-5 text-xs text-green-700 bg-green-50 rounded-3xl font-black uppercase tracking-wider border border-green-100 flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 shrink-0 text-green-500" />
+              <span>Accès vérifié. Connexion en cours...</span>
+            </div>
+          )}
+
           <form onSubmit={handleLogin} className="space-y-6">
+            
+            {/* Champ Email */}
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase ml-4 tracking-widest">Email Professionnel</label>
               <div className="relative group">
-                <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={20} />
+                <Mail className={`absolute left-5 top-1/2 -translate-y-1/2 transition-colors ${
+                  error ? 'text-red-400' : success ? 'text-green-400' : 'text-slate-300 group-focus-within:text-indigo-500'
+                }`} size={20} />
                 <input
                   type="email"
                   required
+                  disabled={loading || success}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white rounded-3xl font-bold text-slate-700 outline-none transition-all"
+                  className={`block w-full pl-14 pr-6 py-5 rounded-3xl font-bold text-slate-700 outline-none transition-all border-2 disabled:opacity-60 ${
+                    error 
+                      ? 'border-red-500 bg-red-50/20' 
+                      : success 
+                      ? 'border-green-500 bg-green-50/20' 
+                      : 'bg-slate-50 border-transparent focus:border-indigo-500 focus:bg-white'
+                  }`}
                   placeholder="nom.prenom@iut-univ.com"
                 />
               </div>
             </div>
 
+            {/* Champ Mot de passe */}
             <div className="space-y-2">
               <div className="flex items-center justify-between px-4">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mot de passe</label>
                 <a href="#" className="text-[10px] text-indigo-600 hover:underline font-black uppercase">Oublié ?</a>
               </div>
               <div className="relative group">
-                <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={20} />
+                <Lock className={`absolute left-5 top-1/2 -translate-y-1/2 transition-colors ${
+                  error ? 'text-red-400' : success ? 'text-green-400' : 'text-slate-300 group-focus-within:text-indigo-500'
+                }`} size={20} />
                 <input
                   type="password"
                   required
+                  disabled={loading || success}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white rounded-3xl font-bold text-slate-700 outline-none transition-all"
+                  className={`block w-full pl-14 pr-6 py-5 rounded-3xl font-bold text-slate-700 outline-none transition-all border-2 disabled:opacity-60 ${
+                    error 
+                      ? 'border-red-500 bg-red-50/20' 
+                      : success 
+                      ? 'border-green-500 bg-green-50/20' 
+                      : 'bg-slate-50 border-transparent focus:border-indigo-500 focus:bg-white'
+                  }`}
                   placeholder="••••••••"
                 />
               </div>
             </div>
 
+            {/* Bouton Soumettre dynamique */}
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-3 py-5 px-4 bg-slate-900 text-white rounded-3xl font-black text-sm hover:bg-indigo-600 hover:shadow-2xl hover:shadow-indigo-200 transition-all duration-300"
+              disabled={loading || success}
+              className={`w-full flex items-center justify-center gap-3 py-5 px-4 rounded-3xl font-black text-sm uppercase tracking-wider transition-all duration-300 active:scale-[0.98] disabled:opacity-50 ${
+                success 
+                  ? 'bg-green-600 text-white' 
+                  : error 
+                  ? 'bg-red-600 text-white shadow-2xl shadow-red-100' 
+                  : 'bg-slate-900 text-white hover:bg-indigo-600 hover:shadow-2xl hover:shadow-indigo-200'
+              }`}
             >
-              SE CONNECTER AU DASHBOARD <ArrowRight size={20} />
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  VÉRIFICATION DES ACCÈS...
+                </>
+              ) : success ? (
+                "ACCÈS ACCORDÉ"
+              ) : (
+                <>
+                  SE CONNECTER AU DASHBOARD <ArrowRight size={20} />
+                </>
+              )}
             </button>
           </form>
 
