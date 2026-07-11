@@ -45,6 +45,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <Award size={20} className="group-hover:text-blue-400 transition-colors" /> Saisie des Notes
   </Link>
 
+   <Link href="/admin-dashboard/academy" className="flex items-center gap-3 p-4 hover:bg-white/5 rounded-2xl font-bold transition text-slate-400 hover:text-white group">
+    <Award size={20} className="group-hover:text-blue-400 transition-colors" /> Gestion des salles
+  </Link>
+
   {/* Vérifie bien que le chemin /admin-dashboard/attendance existe dans tes dossiers */}
   <Link href="/admin-dashboard/attendance" className="flex items-center gap-3 p-4 hover:bg-white/5 rounded-2xl font-bold transition text-slate-400 hover:text-white group">
     <ClipboardCheck size={20} className="group-hover:text-blue-400 transition-colors" /> Suivi des Présences

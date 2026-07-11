@@ -1,14 +1,26 @@
 import Link from 'next/link';
 import { GraduationCap, UserSquare2, ShieldCheck, ArrowRight } from 'lucide-react';
+// 1. Importation du connecteur de base de données sécurisé
+import dbConnect from '@/lib/dbConnect';
 
-export default function HomePage() {
+// 2. Transformation de la fonction en "async" pour pouvoir attendre la connexion
+export default async function HomePage() {
+  
+  // 3. Déclenchement de la connexion dès que quelqu'un arrive sur le site
+  try {
+    await dbConnect();
+  } catch (error) {
+    // Évite de faire crasher le front-end si la DB coupe, l'erreur sera dans les logs du terminal
+    console.error("La base de données n'est pas prête au chargement de la page.");
+  }
+
   const portals = [
     {
       title: "Portail Étudiant",
       desc: "Consultez vos notes, votre emploi du temps et déposez vos devoirs.",
       icon: <GraduationCap size={32} />,
       color: "bg-blue-600",
-      link: "/login/student" // À créer plus tard
+      link: "/login/student" 
     },
     {
       title: "Espace Enseignant",
@@ -22,7 +34,7 @@ export default function HomePage() {
       desc: "Validation des PV, gestion des effectifs et configuration système.",
       icon: <ShieldCheck size={32} />,
       color: "bg-slate-900",
-      link: "/login/admin" // À créer plus tard
+      link: "/login/admin" 
     }
   ];
 

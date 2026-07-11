@@ -1,35 +1,59 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   User, Mail, Shield, MapPin, ArrowLeft, 
   Camera, Check, Lock, Phone, Calendar, 
-  Hash, Briefcase, Globe 
+  Hash, Briefcase, Globe, Loader2 
 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function TeacherProfile() {
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   
-  // Référence pour l'input de fichier
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // État des données (Simulé)
+  // État initial vide mappé sur la structure de ta BDD
   const [profile, setProfile] = useState({
-    firstName: "Jean",
-    lastName: "Dupont",
-    matricule: "TP-2026-0045",
-    birthDate: "12/05/1985",
-    email: "j.dupont@uniportal.edu",
-    phone: "+237 670 00 00 00",
-    residence: "Bastos, Yaoundé",
-    department: "Génie Informatique",
-    specialization: "Intelligence Artificielle & Big Data"
+    name: "",
+    matricule: "",
+    birthDate:"",
+    email: "",
+    phone: "",
+    residence: "",
+    department: "",
+    specialization: ""
   });
 
-  // Gestion de l'import de photo
+  // 🔄 Récupération automatique du profil réel
+  useEffect(() => {
+    fetch('/api/auth/profile')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated && data.user) {
+          setProfile({
+            name: data.user.name || "",
+            matricule: data.user.matricule || "Non assigné",
+            birthDate: data.user.birthDate || "Non assigné",
+            email: data.user.email || "",
+            phone: data.user.phone || "",
+            residence: data.user.residence || data.user.address || "", // Gère les deux variantes de clé
+            department: data.user.department || "Non spécifié",
+            specialization: data.user.specialization || ""
+          });
+          if (data.user.avatar) setProfileImage(data.user.avatar);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Erreur de chargement du profil :", err);
+        setLoading(false);
+      });
+  }, []);
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -41,14 +65,40 @@ export default function TeacherProfile() {
     }
   };
 
-  const handleUpdate = () => {
+  // 💾 Envoi des modifications à l'API
+  const handleUpdate = async () => {
     setSaving(true);
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: profile.phone,
+          residence: profile.residence,
+          specialization: profile.specialization,
+          avatar: profileImage
+        })
+      });
+
+      if (response.ok) {
+        setIsEditing(false);
+      } else {
+        alert("Une erreur est survenue lors de la sauvegarde.");
+      }
+    } catch (error) {
+      console.error("Erreur de mise à jour :", error);
+    } finally {
       setSaving(false);
-      setIsEditing(false);
-      // Logique de sauvegarde API ici
-    }, 1200);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="w-12 h-12 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 bg-slate-50 min-h-screen space-y-8 animate-in fade-in duration-500">
@@ -56,7 +106,7 @@ export default function TeacherProfile() {
       {/* Header avec Actions */}
       <div className="flex items-center justify-between bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
         <div className="flex items-center gap-5">
-          <Link href="/teacher-dashboard" className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-indigo-600 transition-all">
+          <Link href="/dashboard" className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-indigo-600 transition-all">
             <ArrowLeft size={20} />
           </Link>
           <div>
@@ -92,12 +142,11 @@ export default function TeacherProfile() {
 
       <div className="grid lg:grid-cols-12 gap-8">
         
-        {/* SECTION 1 : Identité Fixe (Lecture Seule) */}
+        {/* SECTION 1 : Identité Civile */}
         <div className="lg:col-span-4 space-y-6">
           <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden">
             <div className="relative z-10 text-center">
               
-              {/* Zone Photo Interactive */}
               <div className="relative w-32 h-32 mx-auto mb-6">
                 <input 
                   type="file" 
@@ -113,7 +162,6 @@ export default function TeacherProfile() {
                      <User size={64} className="text-slate-300" />
                    )}
                 </div>
-                {/* Le bouton déclenche l'input caché */}
                 <button 
                   onClick={() => fileInputRef.current?.click()}
                   className="absolute bottom-2 right-2 bg-indigo-600 p-2 rounded-lg text-white shadow-lg hover:scale-110 transition-transform cursor-pointer"
@@ -122,7 +170,7 @@ export default function TeacherProfile() {
                 </button>
               </div>
               
-              <h2 className="text-2xl font-black text-slate-900">{profile.firstName} {profile.lastName}</h2>
+              <h2 className="text-2xl font-black text-slate-900">{profile.name} </h2>
               <p className="text-indigo-600 font-bold text-xs uppercase tracking-tighter mb-6">{profile.department}</p>
               
               <div className="space-y-3 pt-6 border-t border-slate-50 text-left">
@@ -149,7 +197,6 @@ export default function TeacherProfile() {
         {/* SECTION 2 : Informations Modifiables */}
         <div className="lg:col-span-8 space-y-8">
           
-          {/* Contact & Localisation */}
           <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
             <h3 className="text-lg font-black text-slate-800 mb-8 flex items-center gap-3 italic">
               <Globe className="text-indigo-600" size={22} /> Informations de Contact
@@ -158,13 +205,13 @@ export default function TeacherProfile() {
             <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-2 italic ml-2">
-                  <Mail size={12}/> Email Professionnel
+                  <Mail size={12}/> Email Professionnel (Lecture seule)
                 </label>
                 <input 
                   type="email" 
-                  defaultValue={profile.email}
-                  disabled={!isEditing}
-                  className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none transition-all font-bold text-slate-700 focus:bg-white focus:border-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed" 
+                  value={profile.email}
+                  disabled={true}
+                  className="w-full p-4 bg-slate-100 border border-slate-100 rounded-2xl outline-none transition-all font-bold text-slate-500 cursor-not-allowed opacity-70" 
                 />
               </div>
 
@@ -174,8 +221,10 @@ export default function TeacherProfile() {
                 </label>
                 <input 
                   type="text" 
-                  defaultValue={profile.phone}
+                  value={profile.phone}
+                  onChange={(e) => setProfile({...profile, phone: e.target.value})}
                   disabled={!isEditing}
+                  placeholder="+237 6xx xx xx xx"
                   className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none transition-all font-bold text-slate-700 focus:bg-white focus:border-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed" 
                 />
               </div>
@@ -186,37 +235,29 @@ export default function TeacherProfile() {
                 </label>
                 <input 
                   type="text" 
-                  defaultValue={profile.residence}
+                  value={profile.residence}
+                  onChange={(e) => setProfile({...profile, residence: e.target.value})}
                   disabled={!isEditing}
+                  placeholder="Quartier, Ville"
                   className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none transition-all font-bold text-slate-700 focus:bg-white focus:border-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed" 
                 />
               </div>
             </div>
           </div>
 
-          {/* Expertise & Sécurité */}
           <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
             <h3 className="text-lg font-black text-slate-800 mb-8 flex items-center gap-3 italic">
-              <Briefcase className="text-indigo-600" size={22} /> Expertise & Sécurité
+              <Briefcase className="text-indigo-600" size={22} /> Expertise & Compétences
             </h3>
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-1 gap-8">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase italic ml-2">Spécialisation</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase italic ml-2">Spécialisation / Domaines d'études</label>
                 <input 
                   type="text" 
-                  defaultValue={profile.specialization}
+                  value={profile.specialization}
+                  onChange={(e) => setProfile({...profile, specialization: e.target.value})}
                   disabled={!isEditing}
-                  className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none transition-all font-bold text-slate-700 focus:bg-white focus:border-indigo-500 disabled:opacity-60" 
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase italic ml-2 flex items-center gap-1">
-                   <Shield size={12}/> Nouveau mot de passe
-                </label>
-                <input 
-                  type="password" 
-                  placeholder="••••••••"
-                  disabled={!isEditing}
+                  placeholder="Ex: Cloud Computing, Algorithmique Numérique"
                   className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none transition-all font-bold text-slate-700 focus:bg-white focus:border-indigo-500 disabled:opacity-60" 
                 />
               </div>

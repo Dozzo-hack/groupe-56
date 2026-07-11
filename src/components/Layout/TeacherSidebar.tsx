@@ -7,66 +7,70 @@ import {
   FileEdit, 
   BookOpen, 
   UserCircle, 
-  LogOut,
-  GraduationCap
+  GraduationCap,
+  LogOut
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export default function TeacherSidebar() {
+export default function TeacherNav() {
   const pathname = usePathname();
 
   const menuItems = [
-    { name: 'Dashboard', icon: <LayoutDashboard size={20} />, href: '/teacher-dashboard' },
-    { name: 'Faire l\'appel', icon: <ClipboardCheck size={20} />, href: '/teacher-dashboard/attendance' },
-    { name: 'Saisie des Notes', icon: <FileEdit size={20} />, href: '/teacher-dashboard/grades' },
-    { name: 'Mes Modules', icon: <BookOpen size={20} />, href: '/teacher-dashboard/modules' },
-    { name: 'Mon Profil', icon: <UserCircle size={20} />, href: '/teacher-dashboard/profile' },
+    { name: 'Dashboard', icon: <LayoutDashboard size={24} />, href: '/teacher-dashboard' },
+    { name: 'Appel', icon: <ClipboardCheck size={24} />, href: '/teacher-dashboard/attendance' },
+    { name: 'Notes', icon: <FileEdit size={24} />, href: '/teacher-dashboard/grades' },
+    { name: 'Modules', icon: <BookOpen size={24} />, href: '/teacher-dashboard/modules' },
+    { name: 'Profil', icon: <UserCircle size={24} />, href: '/teacher-dashboard/profile' },
   ];
 
   return (
-    <aside className="w-64 h-screen bg-white border-r border-gray-200 flex flex-col fixed left-0 top-0 z-50">
-      
-      {/* Logo Identique pour la cohérence */}
-      <div className="p-6 border-b border-gray-100">
-        <h2 className="text-xl font-bold text-indigo-600 flex items-center gap-2">
-          <GraduationCap className="text-indigo-600" size={24} />
-          UniPortal <span className="text-[10px] bg-indigo-50 px-2 py-0.5 rounded text-indigo-400 font-black uppercase tracking-tighter">Prof</span>
-        </h2>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
-        {menuItems.map((item) => {
-          const isActive = pathname === item.href;
-
-          return (
-            <Link 
-              key={item.name} 
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
-                isActive 
-                ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' 
-                : 'text-gray-600 hover:bg-slate-50 hover:text-indigo-600'
-              }`}
-            >
-              <span className={`${isActive ? 'text-indigo-600' : 'text-gray-400 group-hover:text-indigo-600'}`}>
+    <>
+      {/* 1. SIDEBAR (Uniquement pour Desktop - md:) */}
+      <aside className="hidden md:flex flex-col w-64 h-screen bg-white border-r border-gray-200 fixed left-0 top-0 z-50">
+        <div className="p-6 border-b border-gray-100">
+          <h2 className="text-xl font-bold text-indigo-600 flex items-center gap-2">
+            <GraduationCap size={24} /> UniPortal
+          </h2>
+        </div>
+        
+        <nav className="flex-1 p-4 space-y-2">
+          {menuItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link key={item.name} href={item.href} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-slate-50'}`}>
                 {item.icon}
-              </span>
-              <span className="font-medium">{item.name}</span>
-            </Link>
-          );
-        })}
+                <span className="font-medium">{item.name}</span>
+              </Link>
+            );
+          })}
+        </nav>
+        
+        <div className="p-4 border-t border-gray-100">
+          <button className="flex items-center gap-3 px-4 py-3 w-full text-red-500 hover:bg-red-50 rounded-xl font-medium">
+            <LogOut size={20} /> Déconnexion
+          </button>
+        </div>
+      </aside>
+
+      {/* 2. BOTTOM NAVBAR (Uniquement pour Mobile - md:hidden) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 pb-safe pt-2 px-2 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+        <div className="flex justify-around items-center h-16">
+          {menuItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link 
+                key={item.name} 
+                href={item.href} 
+                className={`flex flex-col items-center justify-center w-full h-full gap-1 ${isActive ? 'text-indigo-600' : 'text-gray-400'}`}
+              >
+                {item.icon}
+                <span className="text-[10px] font-bold">{item.name}</span>
+              </Link>
+            );
+          })}
+        </div>
       </nav>
-
-      {/* Pied de Sidebar */}
-      <div className="p-4 border-t border-gray-100">
-        <button className="flex items-center gap-3 px-4 py-3 w-full text-red-500 hover:bg-red-50 rounded-xl transition-all duration-200 font-medium">
-          <LogOut size={20} />
-          <span>Déconnexion</span>
-        </button>
-      </div>
-
-    </aside>
+    </>
   );
 }
